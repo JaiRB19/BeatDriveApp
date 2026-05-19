@@ -1,0 +1,64 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="beatDriveGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF6A00"/>
+      <stop offset="60%" stop-color="#C1121F"/>
+      <stop offset="100%" stop-color="#B5179E"/>
+    </linearGradient>
+
+    <radialGradient id="backgroundGlow" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#C1121F" stop-opacity="0.25"/>
+      <stop offset="60%" stop-color="#1A1A1D" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#0B0B0F" stop-opacity="0"/>
+    </radialGradient>
+
+    <filter id="neonGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur1"/>
+      <feGaussianBlur stdDeviation="3" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="64" fill="#0B0B0F"/>
+
+  <circle cx="256" cy="256" r="256" fill="url(#backgroundGlow)"/>
+
+  <g filter="url(#neonGlow)" fill="url(#beatDriveGradient)">
+    <rect x="20" y="230" width="14" height="52" rx="7"/>
+    <rect x="47" y="210" width="14" height="92" rx="7"/>
+    <rect x="74" y="175" width="14" height="162" rx="7"/>
+    <rect x="101" y="210" width="14" height="92" rx="7"/>
+    <rect x="128" y="230" width="14" height="52" rx="7"/>
+  </g>
+
+  <g filter="url(#neonGlow)" fill="url(#beatDriveGradient)">
+    <rect x="370" y="230" width="14" height="52" rx="7"/>
+    <rect x="397" y="210" width="14" height="92" rx="7"/>
+    <rect x="424" y="175" width="14" height="162" rx="7"/>
+    <rect x="451" y="210" width="14" height="92" rx="7"/>
+    <rect x="478" y="230" width="14" height="52" rx="7"/>
+  </g>
+
+  <circle
+    cx="256"
+    cy="256"
+    r="90"
+    stroke="url(#beatDriveGradient)"
+    stroke-width="14"
+    fill="none"
+    filter="url(#neonGlow)"
+  />
+
+  <path
+    d="M232 202 L308 256 L232 310 Z"
+    stroke="url(#beatDriveGradient)"
+    stroke-width="14"
+    stroke-linejoin="round"
+    fill="none"
+    filter="url(#neonGlow)"
+  />
+</svg>
