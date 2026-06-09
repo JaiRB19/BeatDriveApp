@@ -186,11 +186,16 @@ function TabNavigator() {
 // ─── Root Stack Navigator ───────────────────────────────────────────────────────
 export default function AppNavigator() {
     return (
-        <SafeAreaProvider>
+        <SafeAreaProvider style={{ backgroundColor: COLORS.background }}>
             <NavigationContainer
                 theme={{ ...DefaultTheme, colors: { ...DefaultTheme.colors, background: COLORS.background } }}
             >
-                <Stack.Navigator screenOptions={{ headerShown: false }}>
+                <Stack.Navigator
+                    screenOptions={{
+                        headerShown: false,
+                        contentStyle: { backgroundColor: COLORS.background } // Corrección aplicada aquí
+                    }}
+                >
                     {/* Main tabs (Library & Settings) */}
                     <Stack.Screen name="MainTabs" component={TabNavigator} />
                     {/* Full screen player modal */}

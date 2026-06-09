@@ -21,8 +21,13 @@
         ]
       }
     },
+    "androidNavigationBar": {
+      "backgroundColor": "#0B0B0F",
+      "barStyle": "light-content"
+    },
     "android": {
       "package": "com.jai.beatdrive",
+      "backgroundColor": "#0B0B0F",
       "permissions": [
         "FOREGROUND_SERVICE",
         "FOREGROUND_SERVICE_MEDIA_PLAYBACK",
