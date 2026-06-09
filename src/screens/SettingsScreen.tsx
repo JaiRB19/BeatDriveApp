@@ -177,7 +177,7 @@ export default function SettingsScreen() {
                             />
                         </View>
                         <Text style={styles.aboutAppName}>Beat Drive</Text>
-                        <Text style={styles.aboutVersion}>v1.0.0 - NITRO MVP</Text>
+                        <Text style={styles.aboutVersion}>v1.1.0 - STEREO EDITION</Text>
                         <Text style={styles.aboutCredits}>Developed In React Native & Expo</Text>
 
                         <TouchableOpacity
