@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, Image, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TextInput, ScrollView, Image, TouchableOpacity, ActivityIndicator, Alert, Modal, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 import { useLibrary } from '../hooks/useLibrary';
 import { usePlayerStore } from '../hooks/usePlayerStore';
+import { usePlaylistStore } from '../store/usePlaylistStore';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -20,13 +21,25 @@ export default function LibraryScreen() {
 
     // 2. Traemos el estado global del reproductor
     const { currentSong, isPlaying, setCurrentSong, togglePlayPause, setQueue, nextSong, previousSong, recentlyPlayed, loadRecentlyPlayed, stopAndRemoveSong } = usePlayerStore();
+    const { playlists, loadPlaylists, createPlaylist, deletePlaylist, addSongToPlaylist, removeSongFromPlaylist } = usePlaylistStore();
 
     // Estado local para la búsqueda de canciones
-    const [searchQuery, setSearchQuery] = React.useState('');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [activeTab, setActiveTab] = useState<'songs' | 'playlists'>('songs');
+    const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
+    
+    // Modales
+    const [createPlaylistModalVisible, setCreatePlaylistModalVisible] = useState(false);
+    const [newPlaylistName, setNewPlaylistName] = useState('');
+    const [addToPlaylistModalVisible, setAddToPlaylistModalVisible] = useState(false);
+    const [songToAdd, setSongToAdd] = useState<any>(null);
+    const [songMenuModalVisible, setSongMenuModalVisible] = useState(false);
+    const [selectedSongForMenu, setSelectedSongForMenu] = useState<any>(null);
 
     // Cargar historial persistido al abrir la app
     useEffect(() => {
         loadRecentlyPlayed();
+        loadPlaylists();
     }, []);
 
     // Helper para generar el mismo color de carátula que el PlayerScreen
@@ -77,6 +90,22 @@ export default function LibraryScreen() {
                 </TouchableOpacity>
             </View>
 
+            {/* SEGMENTED CONTROL */}
+            <View style={styles.segmentedControl}>
+                <TouchableOpacity 
+                    style={[styles.segmentButton, activeTab === 'songs' && styles.segmentButtonActive]}
+                    onPress={() => { setActiveTab('songs'); setSelectedPlaylistId(null); }}
+                >
+                    <Text style={[styles.segmentText, activeTab === 'songs' && styles.segmentTextActive]}>Local Songs</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                    style={[styles.segmentButton, activeTab === 'playlists' && styles.segmentButtonActive]}
+                    onPress={() => { setActiveTab('playlists'); setSelectedPlaylistId(null); }}
+                >
+                    <Text style={[styles.segmentText, activeTab === 'playlists' && styles.segmentTextActive]}>Playlists</Text>
+                </TouchableOpacity>
+            </View>
+
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: currentSong ? 180 : 100 }}>
 
                 {/* BARRA DE BÚSQUEDA */}
@@ -99,118 +128,394 @@ export default function LibraryScreen() {
                 </View>
 
                 {/* RECENTLY PLAYED */}
-                {recentlyPlayed.length > 0 && (
+                {activeTab === 'songs' && (
                     <>
-                        <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>Recently Played</Text>
+                        {/* RECENTLY PLAYED */}
+                        {recentlyPlayed.length > 0 && (
+                            <>
+                                <View style={styles.sectionHeader}>
+                                    <Text style={styles.sectionTitle}>Recently Played</Text>
+                                </View>
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+                                    {recentlyPlayed.map((song) => (
+                                        <TouchableOpacity 
+                                            key={`recent-${song.id}`} 
+                                            style={styles.recentCard}
+                                            onPress={() => {
+                                                // Poner los recientes como cola y reproducir el tocado
+                                                setQueue(recentlyPlayed);
+                                                setCurrentSong(song);
+                                            }}
+                                        >
+                                            <View style={[styles.recentImage, { backgroundColor: getHashColor(song.title), borderColor: getHashColor(song.title, true), borderWidth: 2, alignItems: 'center', justifyContent: 'center' }]}>
+                                                <Text style={{ color: getHashColor(song.title, true), fontSize: 50, fontWeight: '900', fontStyle: 'italic' }}>
+                                                    {song.title.charAt(0).toUpperCase()}
+                                                </Text>
+                                            </View>
+                                            <Text style={styles.recentTitle} numberOfLines={1}>{song.title}</Text>
+                                            <Text style={styles.recentArtist} numberOfLines={1}>{song.artist}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+                            </>
+                        )}
+
+                        {/* LOCAL SONGS & IMPORTED CLOUD SONGS */}
+                        <View style={[styles.sectionHeader, { marginTop: 20, marginBottom: 5 }]}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Ionicons name="folder-open-outline" size={24} color={COLORS.textPrimary} style={{ marginRight: 8 }} />
+                                <Text style={styles.sectionTitle}>Library</Text>
+                            </View>
+                            <TouchableOpacity onPress={importSong} style={styles.importButton}>
+                                <Ionicons name="cloud-download-outline" size={18} color={COLORS.textPrimary} style={{ marginRight: 4 }} />
+                                <Text style={styles.importText}>Import</Text>
+                            </TouchableOpacity>
                         </View>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-                            {recentlyPlayed.map((song) => (
-                                <TouchableOpacity 
-                                    key={`recent-${song.id}`} 
-                                    style={styles.recentCard}
-                                    onPress={() => {
-                                        // Poner los recientes como cola y reproducir el tocado
-                                        setQueue(recentlyPlayed);
-                                        setCurrentSong(song);
-                                    }}
-                                >
-                                    <View style={[styles.recentImage, { backgroundColor: getHashColor(song.title), borderColor: getHashColor(song.title, true), borderWidth: 2, alignItems: 'center', justifyContent: 'center' }]}>
-                                        <Text style={{ color: getHashColor(song.title, true), fontSize: 50, fontWeight: '900', fontStyle: 'italic' }}>
-                                            {song.title.charAt(0).toUpperCase()}
-                                        </Text>
-                                    </View>
-                                    <Text style={styles.recentTitle} numberOfLines={1}>{song.title}</Text>
-                                    <Text style={styles.recentArtist} numberOfLines={1}>{song.artist}</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
+
+                        {!permissionResponse?.granted && (
+                            <TouchableOpacity style={styles.permissionBanner} onPress={requestPermission}>
+                                <Ionicons name="warning-outline" size={20} color={COLORS.background} />
+                                <Text style={styles.permissionBannerText}>Conceder acceso a música del dispositivo</Text>
+                            </TouchableOpacity>
+                        )}
+
+                        {isLoading ? (
+                            <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 20 }} />
+                        ) : (
+                            (() => {
+                                const filteredSongs = songs.filter(song => 
+                                    song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                    song.artist.toLowerCase().includes(searchQuery.toLowerCase())
+                                );
+
+                                if (filteredSongs.length === 0 && searchQuery.length > 0) {
+                                    return (
+                                        <View style={styles.noResultsContainer}>
+                                            <Ionicons name="search-outline" size={48} color={COLORS.textSecondary} />
+                                            <Text style={styles.noResultsText}>No songs found for "{searchQuery}"</Text>
+                                        </View>
+                                    );
+                                }
+
+                                return filteredSongs.map((song) => {
+                                    const isThisSongActive = currentSong?.id === song.id;
+
+                                    return (
+                                        <TouchableOpacity
+                                            key={song.id}
+                                            style={[styles.songRow, isThisSongActive && styles.songRowActive]}
+                                            onPress={() => {
+                                                setQueue(filteredSongs);
+                                                setCurrentSong(song);
+                                            }}
+                                            onLongPress={() => {
+                                                setSongToAdd(song);
+                                                setAddToPlaylistModalVisible(true);
+                                            }}
+                                            delayLongPress={500}
+                                        >
+                                            <View style={styles.songIconContainer}>
+                                                {isThisSongActive && isPlaying ? (
+                                                    <Ionicons name="stats-chart" size={18} color={COLORS.primary} />
+                                                ) : (
+                                                    <Ionicons name="musical-note" size={18} color={COLORS.textSecondary} />
+                                                )}
+                                            </View>
+                                            <View style={styles.songInfo}>
+                                                <Text style={[styles.songTitle, isThisSongActive && { color: COLORS.primary }]} numberOfLines={1}>
+                                                    {song.title}
+                                                </Text>
+                                                <Text style={styles.songArtist} numberOfLines={1}>{song.artist}</Text>
+                                            </View>
+                                            <View style={styles.songRight}>
+                                                <Text style={[styles.songDuration, isThisSongActive && { color: COLORS.primary }]}>
+                                                    {song.duration}
+                                                </Text>
+                                                <TouchableOpacity 
+                                                    onPress={() => {
+                                                        setSelectedSongForMenu(song);
+                                                        setSongMenuModalVisible(true);
+                                                    }}
+                                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                                >
+                                                    <Ionicons
+                                                        name="ellipsis-vertical"
+                                                        size={20}
+                                                        color={isThisSongActive ? COLORS.primary : COLORS.textSecondary}
+                                                    />
+                                                </TouchableOpacity>
+                                            </View>
+                                        </TouchableOpacity>
+                                    );
+                                });
+                            })()
+                        )}
                     </>
                 )}
 
-                {/* LOCAL SONGS & IMPORTED CLOUD SONGS */}
-                <View style={[styles.sectionHeader, { marginTop: 20, marginBottom: 5 }]}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <Ionicons name="folder-open-outline" size={24} color={COLORS.textPrimary} style={{ marginRight: 8 }} />
-                        <Text style={styles.sectionTitle}>Library</Text>
-                    </View>
-                    <TouchableOpacity onPress={importSong} style={styles.importButton}>
-                        <Ionicons name="cloud-download-outline" size={18} color={COLORS.textPrimary} style={{ marginRight: 4 }} />
-                        <Text style={styles.importText}>Import</Text>
-                    </TouchableOpacity>
-                </View>
+                {activeTab === 'playlists' && selectedPlaylistId === null && (
+                    <View style={{ paddingHorizontal: 20 }}>
+                        <TouchableOpacity 
+                            style={styles.createPlaylistCard} 
+                            onPress={() => setCreatePlaylistModalVisible(true)}
+                        >
+                            <Ionicons name="add-circle" size={32} color={COLORS.primary} />
+                            <Text style={styles.createPlaylistText}>Create New Playlist</Text>
+                        </TouchableOpacity>
 
-                {!permissionResponse?.granted && (
-                    <TouchableOpacity style={styles.permissionBanner} onPress={requestPermission}>
-                        <Ionicons name="warning-outline" size={20} color={COLORS.background} />
-                        <Text style={styles.permissionBannerText}>Conceder acceso a música del dispositivo</Text>
-                    </TouchableOpacity>
-                )}
-
-                {isLoading ? (
-                    <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 20 }} />
-                ) : (
-                    (() => {
-                        const filteredSongs = songs.filter(song => 
-                            song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            song.artist.toLowerCase().includes(searchQuery.toLowerCase())
-                        );
-
-                        if (filteredSongs.length === 0 && searchQuery.length > 0) {
-                            return (
-                                <View style={styles.noResultsContainer}>
-                                    <Ionicons name="search-outline" size={48} color={COLORS.textSecondary} />
-                                    <Text style={styles.noResultsText}>No songs found for "{searchQuery}"</Text>
-                                </View>
-                            );
-                        }
-
-                        return filteredSongs.map((song) => {
-                            const isThisSongActive = currentSong?.id === song.id;
-
-                            return (
-                                <TouchableOpacity
-                                    key={song.id}
-                                    style={[styles.songRow, isThisSongActive && styles.songRowActive]}
-                                    onPress={() => {
-                                        setQueue(filteredSongs);
-                                        setCurrentSong(song);
+                        <View style={styles.playlistsGrid}>
+                            {playlists.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).map((playlist) => (
+                                <TouchableOpacity 
+                                    key={playlist.id} 
+                                    style={styles.playlistCard}
+                                    onPress={() => setSelectedPlaylistId(playlist.id)}
+                                    onLongPress={() => {
+                                        Alert.alert(
+                                            "Delete Playlist",
+                                            `Are you sure you want to delete "${playlist.name}"?`,
+                                            [
+                                                { text: "Cancel", style: "cancel" },
+                                                { text: "Delete", style: "destructive", onPress: () => deletePlaylist(playlist.id) }
+                                            ]
+                                        );
                                     }}
                                 >
-                                    <View style={styles.songIconContainer}>
-                                        {isThisSongActive && isPlaying ? (
-                                            <Ionicons name="stats-chart" size={18} color={COLORS.primary} />
-                                        ) : (
-                                            <Ionicons name="musical-note" size={18} color={COLORS.textSecondary} />
-                                        )}
+                                    <View style={[styles.playlistImage, { backgroundColor: getHashColor(playlist.name) }]}>
+                                        <Ionicons name="musical-notes" size={40} color={COLORS.textPrimary} />
                                     </View>
-                                    <View style={styles.songInfo}>
-                                        <Text style={[styles.songTitle, isThisSongActive && { color: COLORS.primary }]} numberOfLines={1}>
-                                            {song.title}
-                                        </Text>
-                                        <Text style={styles.songArtist} numberOfLines={1}>{song.artist}</Text>
-                                    </View>
-                                    <View style={styles.songRight}>
-                                        <Text style={[styles.songDuration, isThisSongActive && { color: COLORS.primary }]}>
-                                            {song.duration}
-                                        </Text>
-                                        <TouchableOpacity 
-                                            onPress={() => handleDeleteSong(song)}
-                                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                                        >
-                                            <Ionicons
-                                                name="ellipsis-vertical"
-                                                size={20}
-                                                color={isThisSongActive ? COLORS.primary : COLORS.textSecondary}
-                                            />
-                                        </TouchableOpacity>
-                                    </View>
+                                    <Text style={styles.playlistName} numberOfLines={1}>{playlist.name}</Text>
+                                    <Text style={styles.playlistCount}>{playlist.songIds.length} songs</Text>
                                 </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+                )}
+
+                {activeTab === 'playlists' && selectedPlaylistId !== null && (
+                    <View style={{ paddingHorizontal: 20 }}>
+                        <TouchableOpacity 
+                            style={styles.backButton} 
+                            onPress={() => setSelectedPlaylistId(null)}
+                        >
+                            <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
+                            <Text style={styles.backButtonText}>Back to Playlists</Text>
+                        </TouchableOpacity>
+                        
+                        {(() => {
+                            const playlist = playlists.find(p => p.id === selectedPlaylistId);
+                            if (!playlist) return null;
+
+                            const playlistSongs = playlist.songIds
+                                .map(id => songs.find(s => s.id === id))
+                                .filter(Boolean) as any[];
+                            
+                            const filteredPlaylistSongs = playlistSongs.filter(song => 
+                                song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                song.artist.toLowerCase().includes(searchQuery.toLowerCase())
                             );
-                        });
-                    })()
+
+                            if (filteredPlaylistSongs.length === 0) {
+                                return (
+                                    <View style={styles.noResultsContainer}>
+                                        <Ionicons name="albums-outline" size={48} color={COLORS.textSecondary} />
+                                        <Text style={styles.noResultsText}>This playlist is empty.</Text>
+                                    </View>
+                                );
+                            }
+
+                            return filteredPlaylistSongs.map((song) => {
+                                const isThisSongActive = currentSong?.id === song.id;
+
+                                return (
+                                    <TouchableOpacity
+                                        key={`pl-${playlist.id}-${song.id}`}
+                                        style={[styles.songRow, isThisSongActive && styles.songRowActive]}
+                                        onPress={() => {
+                                            setQueue(filteredPlaylistSongs);
+                                            setCurrentSong(song);
+                                        }}
+                                    >
+                                        <View style={styles.songIconContainer}>
+                                            {isThisSongActive && isPlaying ? (
+                                                <Ionicons name="stats-chart" size={18} color={COLORS.primary} />
+                                            ) : (
+                                                <Ionicons name="musical-note" size={18} color={COLORS.textSecondary} />
+                                            )}
+                                        </View>
+                                        <View style={styles.songInfo}>
+                                            <Text style={[styles.songTitle, isThisSongActive && { color: COLORS.primary }]} numberOfLines={1}>
+                                                {song.title}
+                                            </Text>
+                                            <Text style={styles.songArtist} numberOfLines={1}>{song.artist}</Text>
+                                        </View>
+                                        <View style={styles.songRight}>
+                                            <Text style={[styles.songDuration, isThisSongActive && { color: COLORS.primary }]}>
+                                                {song.duration}
+                                            </Text>
+                                            <TouchableOpacity 
+                                                onPress={() => removeSongFromPlaylist(playlist.id, song.id)}
+                                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                            >
+                                                <Ionicons
+                                                    name="trash-outline"
+                                                    size={20}
+                                                    color={COLORS.danger}
+                                                />
+                                            </TouchableOpacity>
+                                        </View>
+                                    </TouchableOpacity>
+                                );
+                            });
+                        })()}
+                    </View>
                 )}
             </ScrollView>
+
+            {/* MODAL CREAR PLAYLIST */}
+            <Modal
+                visible={createPlaylistModalVisible}
+                transparent
+                animationType="fade"
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <Text style={styles.modalTitle}>New Playlist</Text>
+                        <TextInput
+                            style={styles.modalInput}
+                            placeholder="Playlist name"
+                            placeholderTextColor={COLORS.textSecondary}
+                            value={newPlaylistName}
+                            onChangeText={setNewPlaylistName}
+                            autoFocus
+                        />
+                        <View style={styles.modalActions}>
+                            <TouchableOpacity style={styles.modalButton} onPress={() => {
+                                setCreatePlaylistModalVisible(false);
+                                setNewPlaylistName('');
+                            }}>
+                                <Text style={styles.modalButtonText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.modalButton, styles.modalButtonPrimary]} onPress={() => {
+                                if (newPlaylistName.trim().length > 0) {
+                                    createPlaylist(newPlaylistName.trim());
+                                    setCreatePlaylistModalVisible(false);
+                                    setNewPlaylistName('');
+                                }
+                            }}>
+                                <Text style={styles.modalButtonPrimaryText}>Create</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* OPTIONS SHEET FOR SONG */}
+            <Modal
+                visible={songMenuModalVisible}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setSongMenuModalVisible(false)}
+            >
+                <TouchableOpacity 
+                    style={styles.modalOverlay} 
+                    activeOpacity={1} 
+                    onPress={() => setSongMenuModalVisible(false)}
+                >
+                    <View style={styles.actionSheetContainer}>
+                        <View style={styles.actionSheetHeader}>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.actionSheetTitle} numberOfLines={1}>
+                                    {selectedSongForMenu?.title || 'Song Options'}
+                                </Text>
+                                <Text style={{ color: COLORS.textSecondary, fontSize: 14, marginTop: 4 }} numberOfLines={1}>
+                                    {selectedSongForMenu?.artist || ''}
+                                </Text>
+                            </View>
+                            <TouchableOpacity onPress={() => setSongMenuModalVisible(false)}>
+                                <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+                            </TouchableOpacity>
+                        </View>
+                        
+                        <TouchableOpacity 
+                            style={styles.actionSheetRow}
+                            onPress={() => {
+                                setSongMenuModalVisible(false);
+                                setSongToAdd(selectedSongForMenu);
+                                setAddToPlaylistModalVisible(true);
+                            }}
+                        >
+                            <Ionicons name="add-circle-outline" size={24} color={COLORS.primary} style={{ marginRight: 15 }} />
+                            <Text style={styles.actionSheetRowText}>Add to Playlist</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity 
+                            style={[styles.actionSheetRow, { borderBottomWidth: 0 }]}
+                            onPress={() => {
+                                setSongMenuModalVisible(false);
+                                if (selectedSongForMenu) {
+                                    handleDeleteSong(selectedSongForMenu);
+                                }
+                            }}
+                        >
+                            <Ionicons name="trash-outline" size={24} color={COLORS.danger} style={{ marginRight: 15 }} />
+                            <Text style={[styles.actionSheetRowText, { color: COLORS.danger }]}>Delete Song</Text>
+                        </TouchableOpacity>
+                    </View>
+                </TouchableOpacity>
+            </Modal>
+
+            {/* MODAL AÑADIR A PLAYLIST */}
+            <Modal
+                visible={addToPlaylistModalVisible}
+                transparent
+                animationType="slide"
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.actionSheetContainer}>
+                        <View style={styles.actionSheetHeader}>
+                            <Text style={styles.actionSheetTitle}>Add to Playlist</Text>
+                            <TouchableOpacity onPress={() => setAddToPlaylistModalVisible(false)}>
+                                <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView style={{ maxHeight: 300 }}>
+                            {playlists.length === 0 ? (
+                                <Text style={styles.noPlaylistsText}>You don't have any playlists yet.</Text>
+                            ) : (
+                                playlists.map(playlist => (
+                                    <TouchableOpacity 
+                                        key={playlist.id} 
+                                        style={styles.actionSheetRow}
+                                        onPress={() => {
+                                            if (songToAdd) {
+                                                addSongToPlaylist(playlist.id, songToAdd.id);
+                                            }
+                                            setAddToPlaylistModalVisible(false);
+                                            setSongToAdd(null);
+                                        }}
+                                    >
+                                        <Ionicons name="musical-notes" size={24} color={COLORS.textSecondary} style={{ marginRight: 15 }} />
+                                        <Text style={styles.actionSheetRowText}>{playlist.name}</Text>
+                                        {songToAdd && playlist.songIds.includes(songToAdd.id) && (
+                                            <Ionicons name="checkmark-circle" size={24} color={COLORS.primary} />
+                                        )}
+                                    </TouchableOpacity>
+                                ))
+                            )}
+                        </ScrollView>
+                        <TouchableOpacity 
+                            style={styles.actionSheetCreateButton}
+                            onPress={() => {
+                                setAddToPlaylistModalVisible(false);
+                                setCreatePlaylistModalVisible(true);
+                            }}
+                        >
+                            <Ionicons name="add" size={20} color={COLORS.background} style={{ marginRight: 8 }} />
+                            <Text style={styles.actionSheetCreateButtonText}>New Playlist</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
 
             {/* MINI PLAYER FLOTANTE (Solo aparece si hay una canción seleccionada) */}
             {currentSong && (
@@ -293,4 +598,35 @@ const styles = StyleSheet.create({
     miniPlayerArtist: { color: COLORS.textSecondary, fontSize: 12 },
     miniPlayerControls: { flexDirection: 'row', alignItems: 'center', gap: 15 },
     playButton: { backgroundColor: COLORS.secondary, padding: 10, borderRadius: 20 },
+    segmentedControl: { flexDirection: 'row', backgroundColor: COLORS.surfaceLight, marginHorizontal: 20, borderRadius: 12, padding: 4, marginBottom: 20 },
+    segmentButton: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8 },
+    segmentButtonActive: { backgroundColor: COLORS.surfaceDark },
+    segmentText: { color: COLORS.textSecondary, fontWeight: 'bold' },
+    segmentTextActive: { color: COLORS.textPrimary },
+    createPlaylistCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surfaceLight, padding: 15, borderRadius: 12, marginBottom: 20, justifyContent: 'center', gap: 10 },
+    createPlaylistText: { color: COLORS.primary, fontSize: 16, fontWeight: 'bold' },
+    playlistsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+    playlistCard: { width: '48%', backgroundColor: COLORS.surfaceLight, borderRadius: 16, padding: 15, marginBottom: 15, alignItems: 'center' },
+    playlistImage: { width: 80, height: 80, borderRadius: 12, marginBottom: 10, justifyContent: 'center', alignItems: 'center' },
+    playlistName: { color: COLORS.textPrimary, fontSize: 16, fontWeight: 'bold', marginBottom: 5 },
+    playlistCount: { color: COLORS.textSecondary, fontSize: 12 },
+    backButton: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, gap: 10 },
+    backButtonText: { color: COLORS.textPrimary, fontSize: 16, fontWeight: 'bold' },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
+    modalContainer: { width: '85%', backgroundColor: COLORS.surfaceDark, borderRadius: 16, padding: 20 },
+    modalTitle: { color: COLORS.textPrimary, fontSize: 20, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+    modalInput: { backgroundColor: COLORS.surfaceLight, color: COLORS.textPrimary, padding: 15, borderRadius: 12, fontSize: 16, marginBottom: 20 },
+    modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
+    modalButton: { paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8 },
+    modalButtonText: { color: COLORS.textSecondary, fontWeight: 'bold' },
+    modalButtonPrimary: { backgroundColor: COLORS.primary },
+    modalButtonPrimaryText: { color: COLORS.background, fontWeight: 'bold' },
+    actionSheetContainer: { width: '100%', backgroundColor: COLORS.surfaceDark, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, position: 'absolute', bottom: 0 },
+    actionSheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+    actionSheetTitle: { color: COLORS.textPrimary, fontSize: 18, fontWeight: 'bold' },
+    actionSheetRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: COLORS.surfaceLight },
+    actionSheetRowText: { flex: 1, color: COLORS.textPrimary, fontSize: 16 },
+    noPlaylistsText: { color: COLORS.textSecondary, textAlign: 'center', paddingVertical: 20 },
+    actionSheetCreateButton: { flexDirection: 'row', backgroundColor: COLORS.primary, padding: 15, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
+    actionSheetCreateButtonText: { color: COLORS.background, fontWeight: 'bold', fontSize: 16 },
 });

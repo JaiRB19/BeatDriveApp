@@ -1,6 +1,7 @@
 export const COLORS = {
     // Fondos oscuros
     background: '#0B0B0F', // Midnight Black
+    surfaceDark: '#151518', // Dark Carbon / Surface Dark
     surface: '#1A1A1D',    // Carbon Gray
     surfaceLight: '#22252B',// Soft Dark
 
