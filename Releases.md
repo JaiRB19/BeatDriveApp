@@ -4,6 +4,29 @@ Historial oficial de lanzamientos y actualizaciones de **BeatDrive**, el reprodu
 
 ---
 
+## 📦 v1.1.0 - TRAX STEREO EDITION
+**Fecha:** 9 de Junio, 2026  
+**Nivel de Estabilidad:** 100% Producción Ready (Car Stereo / Android Dashboard Build)  
+**ID de Paquete:** `com.jai.beatdrive`
+
+### 🌟 Resumen del Lanzamiento
+Esta actualización especial adapta **BeatDrive** de manera específica para pantallas horizontales fijas y autoestéreos Android (particularmente modelos chinos integrados en salpicaderos de coches). Se optimiza la navegación al prescindir de la barra de pestañas vertical en este formato y se bloquea la orientación en horizontal.
+
+### 🛠️ Características Principales
+
+#### 1. 📺 Orientación Horizontal Obligatoria (Landscape Lock)
+* **Bloqueo en Horizontal:** Modificado el archivo de configuración `app.json` (`"orientation": "landscape"`) para asegurar que la aplicación se inicie y mantenga siempre en modo apaisado, eliminando rotaciones no deseadas en el salpicadero.
+
+#### 2. 🗺️ Navegación y Accesibilidad sin Barra de Pestañas (Landscape UX)
+* **Acceso Directo a Ajustes:** Añadido un botón de configuración (`settings-outline`) en la cabecera de la biblioteca (`LibraryScreen`) que aparece únicamente cuando el dispositivo está en modo horizontal.
+* **Regreso Integrado:** Añadido un botón de regreso nativo (`arrow-back`) en la pantalla de Ajustes (`SettingsScreen`) para volver a la biblioteca, resolviendo la inaccesibilidad creada por la ocultación de la barra de navegación flotante en pantallas anchas.
+
+#### 3. ⚡ Blindaje de Rendimiento y Prevención de Fugas (Phase 2 Optimizations)
+* **Zustand & Render Control:** Suscripciones optimizadas mediante destructuración selectiva y shallow check para evitar que la actualización de la posición del reproductor (cada 250ms) cause re-renderizaciones masivas de la lista.
+* **expo-av Concurrency Fixes:** Implementación de candados y bloques de seguridad `try-finally` para evitar race conditions y fugas de memoria al descargar canciones rápidamente en sucesión.
+
+---
+
 ## 📦 v1.0.0 - NITRO MVP (Producción Inicial)
 **Fecha:** 19 de Mayo, 2026  
 **Nivel de Estabilidad:** 100% Producción Ready (Google Play Store Submission)  

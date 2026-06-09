@@ -96,7 +96,7 @@ export default function SettingsScreen() {
             {/* HEADER */}
             <View style={[styles.header, isLandscape && styles.headerLandscape]}>
                 {isLandscape && (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={() => navigation.navigate('Library' as never)}
                         style={{ marginRight: 10 }}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -177,7 +177,7 @@ export default function SettingsScreen() {
                             />
                         </View>
                         <Text style={styles.aboutAppName}>Beat Drive</Text>
-                        <Text style={styles.aboutVersion}>v1.1.0 - STEREO EDITION</Text>
+                        <Text style={styles.aboutVersion}>v1.1.0 - TRAX STEREO EDITION</Text>
                         <Text style={styles.aboutCredits}>Developed In React Native & Expo</Text>
 
                         <TouchableOpacity
