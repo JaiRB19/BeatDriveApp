@@ -44,6 +44,7 @@ const initAudio = async () => {
 };
 
 let soundInstance: Audio.Sound | null = null;
+let loadCounter = 0;
 
 export const usePlayerStore = create<PlayerState>((set, get) => ({
     currentSong: null,
@@ -82,6 +83,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     },
 
     setCurrentSong: async (song: Song) => {
+        const currentLoadId = ++loadCounter;
         await initAudio();
 
         if (soundInstance) {
@@ -113,6 +115,11 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
                 { uri: song.uri },
                 { shouldPlay: true, progressUpdateIntervalMillis: 250 }
             );
+
+            if (currentLoadId !== loadCounter) {
+                await sound.unloadAsync();
+                return;
+            }
 
             soundInstance = sound;
             set({ isPlaying: true });

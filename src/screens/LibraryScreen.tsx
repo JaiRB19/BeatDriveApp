@@ -89,9 +89,16 @@ export default function LibraryScreen() {
                     />
                 )}
                 <Text style={[styles.headerTitle, isLandscape && styles.headerTitleLandscape]}>BEAT DRIVE</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('DriveMode' as never)}>
-                    <Ionicons name="car-sport" size={isLandscape ? 24 : 28} color={COLORS.primary} />
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: isLandscape ? 20 : 15 }}>
+                    {isLandscape && (
+                        <TouchableOpacity onPress={() => navigation.navigate('Settings' as never)}>
+                            <Ionicons name="settings-outline" size={24} color={COLORS.textPrimary} />
+                        </TouchableOpacity>
+                    )}
+                    <TouchableOpacity onPress={() => navigation.navigate('DriveMode' as never)}>
+                        <Ionicons name="car-sport" size={isLandscape ? 24 : 28} color={COLORS.primary} />
+                    </TouchableOpacity>
+                </View>
             </View>
 
             {/* SEGMENTED CONTROL */}

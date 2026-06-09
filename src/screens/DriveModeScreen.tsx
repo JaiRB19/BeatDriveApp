@@ -121,7 +121,7 @@ export default function DriveModeScreen() {
                                             onPress={previousSong}
                                             disabled={!currentSong}
                                         >
-                                            <Ionicons name="play-skip-back" size={32} color={currentSong ? COLORS.textPrimary : COLORS.surfaceLight} />
+                                            <Ionicons name="play-skip-back" size={38} color={currentSong ? COLORS.textPrimary : COLORS.surfaceLight} />
                                         </TouchableOpacity>
 
                                         <TouchableOpacity
@@ -138,7 +138,7 @@ export default function DriveModeScreen() {
                                         >
                                             <Ionicons
                                                 name={isPlaying ? "pause" : "play"}
-                                                size={40}
+                                                size={48}
                                                 color={isPlaying ? activeColor : COLORS.textPrimary}
                                                 style={!isPlaying ? { marginLeft: 4 } : undefined}
                                             />
@@ -149,7 +149,7 @@ export default function DriveModeScreen() {
                                             onPress={nextSong}
                                             disabled={!currentSong}
                                         >
-                                            <Ionicons name="play-skip-forward" size={32} color={currentSong ? COLORS.textPrimary : COLORS.surfaceLight} />
+                                            <Ionicons name="play-skip-forward" size={38} color={currentSong ? COLORS.textPrimary : COLORS.surfaceLight} />
                                         </TouchableOpacity>
                                     </View>
                                 </View>
@@ -288,8 +288,8 @@ export default function DriveModeScreen() {
 
                                     return (
                                         <View>
-                                            <TouchableOpacity 
-                                                style={styles.backToPlaylistsBtn} 
+                                            <TouchableOpacity
+                                                style={styles.backToPlaylistsBtn}
                                                 onPress={() => setExpandedPlaylistId(null)}
                                             >
                                                 <Ionicons name="arrow-back" size={20} color={COLORS.primary} />
@@ -676,19 +676,19 @@ const styles = StyleSheet.create({
     },
     controlsRowLandscape: {
         flexDirection: 'row',
-        justifyContent: 'flex-start',
+        justifyContent: 'center',
         alignItems: 'center',
-        gap: 20,
+        gap: 25,
     },
     sideButtonLandscape: {
-        width: 60,
-        height: 60,
+        width: 75,
+        height: 75,
         backgroundColor: COLORS.surface,
         borderColor: 'rgba(255, 255, 255, 0.08)',
     },
     centerButtonLandscape: {
-        width: 80,
-        height: 80,
+        width: 95,
+        height: 95,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.4,
         shadowRadius: 10,

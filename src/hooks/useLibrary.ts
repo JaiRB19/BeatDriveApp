@@ -138,14 +138,21 @@ export const useLibrary = () => {
 
             // Usamos expo-av para extraer la duración real del archivo importado
             let durationSeconds = 0;
+            let tempSound: Audio.Sound | null = null;
             try {
                 const { sound, status } = await Audio.Sound.createAsync({ uri: permanentUri });
+                tempSound = sound;
                 if (status.isLoaded && status.durationMillis) {
                     durationSeconds = status.durationMillis / 1000;
                 }
-                await sound.unloadAsync();
             } catch (err) {
                 console.error("Error leyendo la duración con expo-av", err);
+            } finally {
+                if (tempSound) {
+                    try {
+                        await tempSound.unloadAsync();
+                    } catch (e) {}
+                }
             }
 
             const newSong: Song = {

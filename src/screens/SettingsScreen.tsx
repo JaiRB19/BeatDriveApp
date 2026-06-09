@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Switch, TouchableOpacity, ScrollView, Alert, ActivityIndicator, DeviceEventEmitter, Image, Linking } from 'react-native';
+import { View, Text, StyleSheet, Switch, TouchableOpacity, ScrollView, Alert, ActivityIndicator, DeviceEventEmitter, Image, Linking, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -9,6 +9,8 @@ import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function SettingsScreen() {
+    const { width, height } = useWindowDimensions();
+    const isLandscape = width > height;
     const [keepAwake, setKeepAwake] = useState(false);
     const [cacheSizeStr, setCacheSizeStr] = useState("Calculating...");
     const [isClearing, setIsClearing] = useState(false);
@@ -92,7 +94,16 @@ export default function SettingsScreen() {
     return (
         <View style={[styles.container, { paddingTop: insets.top }]}>
             {/* HEADER */}
-            <View style={styles.header}>
+            <View style={[styles.header, isLandscape && styles.headerLandscape]}>
+                {isLandscape && (
+                    <TouchableOpacity 
+                        onPress={() => navigation.navigate('Library' as never)}
+                        style={{ marginRight: 10 }}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                        <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
+                    </TouchableOpacity>
+                )}
                 <Text style={styles.headerTitle}>SETTINGS</Text>
             </View>
 
@@ -197,6 +208,12 @@ const styles = StyleSheet.create({
         paddingBottom: 15,
         borderBottomWidth: 1,
         borderBottomColor: 'rgba(255,255,255,0.05)',
+    },
+    headerLandscape: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingTop: 15,
+        paddingBottom: 10,
     },
     headerTitle: {
         color: COLORS.textPrimary,
