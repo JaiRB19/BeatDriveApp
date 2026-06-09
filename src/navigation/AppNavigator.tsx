@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Text, useWindowDimensions } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
@@ -24,9 +24,14 @@ const TABS: { name: string; icon: string; iconOutline: string; label: string }[]
 // ─── Premium Floating Glassmorphism Tab Bar ─────────────────────────────────────
 function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     const insets = useSafeAreaInsets();
+    const { width, height } = useWindowDimensions();
+    const isLandscape = width > height;
 
     // Respect device safe area (gesture bar / nav buttons) with a minimum 12px gap
     const bottomOffset = Math.max(insets.bottom, 12);
+
+    // Auto-hide tab bar in landscape — saves precious vertical space on dashboards
+    if (isLandscape) return null;
 
     return (
         <View style={[styles.tabBarWrapper, { bottom: bottomOffset }]}>

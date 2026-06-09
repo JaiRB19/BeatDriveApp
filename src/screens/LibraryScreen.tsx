@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, Image, TouchableOpacity, ActivityIndicator, Alert, Modal, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView, Image, TouchableOpacity, ActivityIndicator, Alert, Modal, FlatList, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 import { useLibrary } from '../hooks/useLibrary';
@@ -16,6 +16,8 @@ const TAB_BAR_HEIGHT = 68;
 export default function LibraryScreen() {
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
+    const { width, height } = useWindowDimensions();
+    const isLandscape = width > height;
     // 1. Traemos la lógica de la biblioteca (archivos locales e importados)
     const { songs, permissionResponse, requestPermission, isLoading, importSong, deleteImportedSong } = useLibrary();
 
@@ -77,16 +79,18 @@ export default function LibraryScreen() {
     };
 
     return (
-        <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={[styles.container, { paddingTop: isLandscape ? (insets.top + 4) : insets.top }]}>
             {/* HEADER */}
-            <View style={styles.header}>
-                <Image 
-                    source={require('../../assets/icon.png')} 
-                    style={{ width: 34, height: 34, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255, 106, 0, 0.4)' }} 
-                />
-                <Text style={styles.headerTitle}>BEAT DRIVE</Text>
+            <View style={[styles.header, isLandscape && styles.headerLandscape]}>
+                {!isLandscape && (
+                    <Image 
+                        source={require('../../assets/icon.png')} 
+                        style={{ width: 34, height: 34, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255, 106, 0, 0.4)' }} 
+                    />
+                )}
+                <Text style={[styles.headerTitle, isLandscape && styles.headerTitleLandscape]}>BEAT DRIVE</Text>
                 <TouchableOpacity onPress={() => navigation.navigate('DriveMode' as never)}>
-                    <Ionicons name="car-sport" size={28} color={COLORS.primary} />
+                    <Ionicons name="car-sport" size={isLandscape ? 24 : 28} color={COLORS.primary} />
                 </TouchableOpacity>
             </View>
 
@@ -106,7 +110,14 @@ export default function LibraryScreen() {
                 </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: currentSong ? 180 : 100 }}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{
+                    paddingBottom: isLandscape
+                        ? (insets.bottom + 20)
+                        : (currentSong ? 180 : 100)
+                }}
+            >
 
                 {/* BARRA DE BÚSQUEDA */}
                 <View style={styles.searchContainer}>
@@ -197,57 +208,67 @@ export default function LibraryScreen() {
                                     );
                                 }
 
-                                return filteredSongs.map((song) => {
-                                    const isThisSongActive = currentSong?.id === song.id;
+                                return (
+                                    <View style={isLandscape ? styles.songGridLandscape : undefined}>
+                                        {filteredSongs.map((song) => {
+                                            const isThisSongActive = currentSong?.id === song.id;
 
-                                    return (
-                                        <TouchableOpacity
-                                            key={song.id}
-                                            style={[styles.songRow, isThisSongActive && styles.songRowActive]}
-                                            onPress={() => {
-                                                setQueue(filteredSongs);
-                                                setCurrentSong(song);
-                                            }}
-                                            onLongPress={() => {
-                                                setSongToAdd(song);
-                                                setAddToPlaylistModalVisible(true);
-                                            }}
-                                            delayLongPress={500}
-                                        >
-                                            <View style={styles.songIconContainer}>
-                                                {isThisSongActive && isPlaying ? (
-                                                    <Ionicons name="stats-chart" size={18} color={COLORS.primary} />
-                                                ) : (
-                                                    <Ionicons name="musical-note" size={18} color={COLORS.textSecondary} />
-                                                )}
-                                            </View>
-                                            <View style={styles.songInfo}>
-                                                <Text style={[styles.songTitle, isThisSongActive && { color: COLORS.primary }]} numberOfLines={1}>
-                                                    {song.title}
-                                                </Text>
-                                                <Text style={styles.songArtist} numberOfLines={1}>{song.artist}</Text>
-                                            </View>
-                                            <View style={styles.songRight}>
-                                                <Text style={[styles.songDuration, isThisSongActive && { color: COLORS.primary }]}>
-                                                    {song.duration}
-                                                </Text>
-                                                <TouchableOpacity 
+                                            return (
+                                                <TouchableOpacity
+                                                    key={song.id}
+                                                    style={[
+                                                        styles.songRow,
+                                                        isThisSongActive && styles.songRowActive,
+                                                        isLandscape && styles.songRowLandscape,
+                                                    ]}
                                                     onPress={() => {
-                                                        setSelectedSongForMenu(song);
-                                                        setSongMenuModalVisible(true);
+                                                        setQueue(filteredSongs);
+                                                        setCurrentSong(song);
                                                     }}
-                                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                                    onLongPress={() => {
+                                                        setSongToAdd(song);
+                                                        setAddToPlaylistModalVisible(true);
+                                                    }}
+                                                    delayLongPress={500}
                                                 >
-                                                    <Ionicons
-                                                        name="ellipsis-vertical"
-                                                        size={20}
-                                                        color={isThisSongActive ? COLORS.primary : COLORS.textSecondary}
-                                                    />
+                                                    <View style={[styles.songIconContainer, isLandscape && styles.songIconLandscape]}>
+                                                        {isThisSongActive && isPlaying ? (
+                                                            <Ionicons name="stats-chart" size={18} color={COLORS.primary} />
+                                                        ) : (
+                                                            <Ionicons name="musical-note" size={18} color={COLORS.textSecondary} />
+                                                        )}
+                                                    </View>
+                                                    <View style={styles.songInfo}>
+                                                        <Text style={[styles.songTitle, isThisSongActive && { color: COLORS.primary }]} numberOfLines={1}>
+                                                            {song.title}
+                                                        </Text>
+                                                        <Text style={styles.songArtist} numberOfLines={1}>{song.artist}</Text>
+                                                    </View>
+                                                    <View style={styles.songRight}>
+                                                        {!isLandscape && (
+                                                            <Text style={[styles.songDuration, isThisSongActive && { color: COLORS.primary }]}>
+                                                                {song.duration}
+                                                            </Text>
+                                                        )}
+                                                        <TouchableOpacity 
+                                                            onPress={() => {
+                                                                setSelectedSongForMenu(song);
+                                                                setSongMenuModalVisible(true);
+                                                            }}
+                                                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                                        >
+                                                            <Ionicons
+                                                                name="ellipsis-vertical"
+                                                                size={20}
+                                                                color={isThisSongActive ? COLORS.primary : COLORS.textSecondary}
+                                                            />
+                                                        </TouchableOpacity>
+                                                    </View>
                                                 </TouchableOpacity>
-                                            </View>
-                                        </TouchableOpacity>
-                                    );
-                                });
+                                            );
+                                        })}
+                                    </View>
+                                );
                             })()
                         )}
                     </>
@@ -263,7 +284,7 @@ export default function LibraryScreen() {
                             <Text style={styles.createPlaylistText}>Create New Playlist</Text>
                         </TouchableOpacity>
 
-                        <View style={styles.playlistsGrid}>
+                        <View style={[styles.playlistsGrid, isLandscape && styles.playlistsGridLandscape]}>
                             {playlists.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).map((playlist) => (
                                 <TouchableOpacity 
                                     key={playlist.id} 
@@ -517,8 +538,8 @@ export default function LibraryScreen() {
                 </View>
             </Modal>
 
-            {/* MINI PLAYER FLOTANTE (Solo aparece si hay una canción seleccionada) */}
-            {currentSong && (
+            {/* MINI PLAYER FLOTANTE (solo en portrait, si hay canción activa) */}
+            {currentSong && !isLandscape && (
                 <View style={[styles.miniPlayer, { 
                     bottom: Math.max(insets.bottom, 12) + TAB_BAR_HEIGHT + 10 
                 }]}>
@@ -555,7 +576,9 @@ const styles = StyleSheet.create({
     permissionButton: { backgroundColor: COLORS.primary, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 8 },
     permissionText: { color: COLORS.textPrimary, fontWeight: 'bold', fontSize: 16 },
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 20, paddingTop: 10 },
+    headerLandscape: { marginBottom: 8, paddingTop: 4 },
     headerTitle: { color: COLORS.textPrimary, fontSize: 24, fontWeight: '900', fontStyle: 'italic', letterSpacing: 2 },
+    headerTitleLandscape: { fontSize: 18 },
     searchContainer: { flexDirection: 'row', backgroundColor: COLORS.surfaceLight, marginHorizontal: 20, borderRadius: 12, padding: 12, alignItems: 'center', marginBottom: 30 },
     searchIcon: { marginRight: 10 },
     searchInput: { flex: 1, color: COLORS.textPrimary, fontSize: 16 },
@@ -605,7 +628,26 @@ const styles = StyleSheet.create({
     segmentTextActive: { color: COLORS.textPrimary },
     createPlaylistCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surfaceLight, padding: 15, borderRadius: 12, marginBottom: 20, justifyContent: 'center', gap: 10 },
     createPlaylistText: { color: COLORS.primary, fontSize: 16, fontWeight: 'bold' },
+    // Song landscape grid
+    songGridLandscape: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        paddingHorizontal: 10,
+    },
+    songRowLandscape: {
+        width: '50%',
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+        borderRadius: 14,
+        marginHorizontal: 0,
+    },
+    songIconLandscape: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+    },
     playlistsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+    playlistsGridLandscape: { flexWrap: 'wrap' },
     playlistCard: { width: '48%', backgroundColor: COLORS.surfaceLight, borderRadius: 16, padding: 15, marginBottom: 15, alignItems: 'center' },
     playlistImage: { width: 80, height: 80, borderRadius: 12, marginBottom: 10, justifyContent: 'center', alignItems: 'center' },
     playlistName: { color: COLORS.textPrimary, fontSize: 16, fontWeight: 'bold', marginBottom: 5 },
